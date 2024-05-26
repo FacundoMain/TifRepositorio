@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu May 23 00:08:09 2024
-
-@author: nahue
-"""
-
 import os
 import numpy as np
 from scipy.signal import firwin, lfilter, butter, filtfilt
@@ -23,8 +16,6 @@ def plot_time_signal(data, fs=10, title="Señal en el Tiempo"):
     plt.grid(True)
     plt.legend()
     plt.show()
-
-
 
 def fir_lowpass_filter(data, cutoff=0.1, fs=10, numtaps=31):
     nyq = 0.5 * fs  # Frecuencia de Nyquist
@@ -75,6 +66,9 @@ if __name__ == "__main__":
     plt.close('all')
     folder = "Registros"  # Carpeta que contiene los archivos
 
+    all_filtered_signals = []  # Para almacenar todas las señales filtradas
+    fs = 10  # Frecuencia de muestreo
+
     for filename in os.listdir(folder):
         if filename.endswith(".txt"):  # Asegurarse de que solo se procesen archivos .txt
             filepath = os.path.join(folder, filename)
@@ -82,30 +76,30 @@ if __name__ == "__main__":
             # Carga de muestras
             samples = load_samples(filepath)
             
-            # Graficar el espectro de frecuencia original
-            #plot_frequency_spectrum(samples, fs=10, title=f"Espectro de Frecuencia Original - {filename}")
-            
             # Remover la componente de 0 Hz
             samples_no_dc = remove_dc(samples)
             
             # Aplicar filtro pasa bajo
-            filtered_samples = fir_lowpass_filter(samples_no_dc)
-            #filtered_samples = butter_lowpass_filter(samples_no_dc)
+            filtered_samples = fir_lowpass_filter(samples_no_dc, fs=fs)
+            #filtered_samples = butter_lowpass_filter(samples_no_dc, fs=fs)
             
-            # # Graficar el espectro de frecuencia filtrado
-            # plot_frequency_spectrum(filtered_samples, fs=10, title=f"Espectro de Frecuencia Filtrado - {filename}")
+            # Almacenar la señal filtrada
+            all_filtered_signals.append((filename, filtered_samples))
             
-            # # Calcular la derivada
-            # derivative_samples = derivative(filtered_samples)
-            
-            # # Interpolación lineal (se hace implícitamente al graficar)
-            # plt.figure(figsize=(10, 6))
-            # plt.plot(np.linspace(0, len(derivative_samples)/10, len(derivative_samples)), derivative_samples, marker='o', linestyle='-', label='Derivada (interpolada para graficar)')
-            # plt.title(f"Derivada de las muestras filtradas - {filename}")
-            # plt.xlabel("Tiempo (s)")
-            # plt.ylabel("Amplitud")
-            # plt.legend()
-            # plt.grid(True)
-            # plt.show()
-            
-            plot_time_signal(filtered_samples, fs=10, title=f"Señal Original en el Tiempo - {filename}")
+            # Graficar la señal en el tiempo
+            plot_time_signal(filtered_samples, fs=fs, title=f"Señal Filtrada en el Tiempo - {filename}")
+
+    # Graficar todas las señales filtradas solapadas
+    plt.figure(figsize=(12, 8))
+    for filename, signal in all_filtered_signals:
+        N = len(signal)
+        T = 1/fs
+        t = np.linspace(0, N*T, N, endpoint=False)
+        plt.plot(t, signal, label=filename)
+    
+    plt.title("Todas las Señales Filtradas en el Tiempo")
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
