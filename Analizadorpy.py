@@ -1,10 +1,40 @@
 import os
 import numpy as np
 from scipy.signal import firwin, lfilter, butter, filtfilt
-from scipy.fftpack import fft
+from scipy import fft
 import matplotlib.pyplot as plt
 import math
 
+def fft_mag(x, fs = 10):
+    """
+    ------------------------
+    INPUT:
+    --------
+    x: array de una dimensión conteniendo la señal cuya fft se busca calcular
+    fs: frecuncia a la que está muestreada la señal
+    ------------------------
+    OUTPUT:
+    --------
+    f: array de una dimension con con los valores correspondientes al eje de 
+    frecuencias de la fft.
+    mag: array de una dimensión conteniendo los valores en magnitud de la fft
+    de la señal.    
+    """
+    freq = fft.fftfreq(len(x), d=1/fs)   # se genera el vector de frecuencias
+    senial_fft = fft.fft(x)    # se calcula la transformada rápida de Fourier
+
+    # El espectro es simétrico, nos quedamos solo con el semieje positivo
+    f = freq[np.where(freq >= 0)]      
+    senial_fft = senial_fft[np.where(freq >= 0)]
+
+    # Se calcula la magnitud del espectro
+    mag = np.abs(senial_fft) / len(x)    # Respetando la relación de Parceval
+    # Al haberse descartado la mitad del espectro, para conservar la energía 
+    # original de la señal, se debe multiplicar la mitad restante por dos (excepto
+    # en 0 y fm/2)
+    mag[1:len(mag)-1] = 2 * mag[1:len(mag)-1]
+    
+    return f, mag
 
 def plot_time_signal(data, fs=10, title="Señal en el Tiempo"):
     '''
@@ -111,6 +141,8 @@ def load_samples(filename):
         Vector con los datos cargados.
     '''
     data = np.loadtxt(filename)
+    data = 1/data
+   
     return data
 
 def derivative(data, fs=10):
@@ -133,6 +165,8 @@ def derivative(data, fs=10):
     dt = 1/fs
     # Diferencia centrada excepto para los bordes
     d_data = np.diff(data) / dt
+    
+    d_data[0:30] = d_data[35]
     return d_data
 
 
@@ -227,7 +261,7 @@ def plot_frequency_spectrum(data, fs=10, title="Espectro de Frecuencia"):
     plt.plot(xf, 2.0/N * np.abs(yf[:N//2]))
     plt.title(title)
     plt.xlabel('Frecuencia (Hz)')
-    plt.ylabel('Amplitud [Ω] [Ω]')
+    plt.ylabel('Amplitud [Ω]')
     plt.xlim([0, 0.1])
     plt.grid(True)
     plt.show()
@@ -388,7 +422,7 @@ def desvioCorregido(desvio):
         Devuelve el vector que contiene solo valores entre 0 y 1.
 
     '''
-    desvio = np.clip(desvio,0,1)
+    desvio = desvio #np.clip(desvio,0,1)
         
     return desvio
     
@@ -446,7 +480,7 @@ if __name__ == "__main__":
     plt.title("Todas las Señales Filtradas en el Tiempo")
     plt.xlabel('Tiempo [s]')
     plt.ylabel('Amplitud [Ω]')
-    plt.legend()
+    # plt.legend()
     plt.grid(True)
     plt.show()
     
@@ -499,56 +533,59 @@ if __name__ == "__main__":
     
     plt.figure(figsize=(12, 8))
     
-    plt.plot(t,promedio,'g', label = 'Promedio')
-    plt.plot(t,desvioCorregido(promedio+desvio), '--r', label = 'Desvio')
-    plt.plot(t,desvioCorregido(promedio-desvio), '--r')
+    plt.plot(t,promedio,'black', label = 'Promedio')
+    plt.plot(t,desvioCorregido(promedio+desvio), '--g', label = 'Desvio')
+    plt.plot(t,desvioCorregido(promedio-desvio), '--g')
     
     plt.title("Promedio de todas las Señales normalizadas")
     plt.xlabel('Tiempo [s]')
-    plt.ylabel('Amplitud [Ω]')
+    plt.ylabel('Amplitud [S]')
+    
+    # plt.axvline(100, color='c', linestyle=(0, (5, 10)), linewidth=1, label='Inicia el audio')
+    # plt.axvline(1250, color="#D95319", linestyle=(0, (5, 10)), linewidth=1, label='Finaliza el audio')
+
+
     plt.legend()
     plt.grid(True)
     plt.show()
     
+    #%%
+    derivTotal = derivative(promedio)
+    tderiv = t[0:12800]
     
-    
-    
-    #%% Junto las 2 en una figura para comparar
-    # Crear un nuevo objeto Figure y dos Axes (subplots)
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-    fig.suptitle("Promedio y desvio estandar en toda la población")
-    ax1.plot(t,prom,'c', label = 'Promedio')
-    ax1.plot(t,VdesMax, '--g', label = 'Desvio')
-    ax1.plot(t,VdesMin, '--g')
- 
-    ax1.set_title("Promedio de todas las Señales")
-    ax1.set_xlabel('Tiempo [s]')
-    ax1.set_ylabel('Amplitud [Ω]')
-    ax1.legend()
-    ax1.grid(True)
-    
-    ax2.plot(t,promedio,'c', label = 'Promedio')
-    ax2.plot(t,desvioCorregido(promedio+desvio), '--g', label = 'Desvio')
-    ax2.plot(t,desvioCorregido(promedio-desvio), '--g')
-    
-    ax2.set_title("Promedio de todas las Señales normalizadas")
-    ax2.set_xlabel('Tiempo [s]')
-    ax2.set_ylabel('Amplitud [Ω]')
-    ax2.legend()
-    ax2.grid(True)
-    
+    plt.figure(figsize=(12, 8))
+    plt.plot(tderiv,derivTotal,'black', label = 'Promedio')
+    plt.title("Derivada del promedio de todas las Señales")
+    plt.xlabel('Tiempo [s]')
+    plt.ylabel('Amplitud [S/s]')
+    plt.grid(True)
+    plt.show()
+  
+    #%%
+    f, E_total = fft_mag(derivTotal)
+   
+    plt.figure(figsize=(12, 8))
+    plt.plot(f, E_total, 'black', label = 'Promedio')
+    plt.title("Espectro de la derivada del promedio")
+    plt.xlabel('Frecuencia [Hz]')
+    plt.ylabel('Amplitud [S/s]')
+    plt.xlim([0 ,0.1])
+    plt.grid(True)
+    plt.show()
+        
     #%% Promedio y desvio en hombres y mujeres total
     promedioFemenino, promedioMasculino = promedioPorGenero(all_filtered_signals)
     desvio_femenino, desvio_masculino = desvioPorGenero(all_filtered_signals, promedioFemenino, promedioMasculino)
-      
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+    
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
     fig.suptitle("Promedio y desvio estandar en todas las mediciones")
     ax1.set_title("Promedio  masculino")
     ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
-    ax1.plot(t,desvioCorregido(promedioMasculino + desvio_masculino), '--g', label = 'Desvio')
-    ax1.plot(t,desvioCorregido(promedioMasculino - desvio_masculino), '--g')
+    ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
+    ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
     ax1.set_xlabel('Tiempo [s]')
-    ax1.set_ylabel('Amplitud [Ω]')
+    ax1.set_ylabel('Amplitud [S]')
     ax1.legend()
     ax1.grid(True)
     
@@ -557,99 +594,143 @@ if __name__ == "__main__":
     ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
     ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
     ax2.set_xlabel('Tiempo [s]')
-    ax2.set_ylabel('Amplitud [Ω]')
+    ax2.set_ylabel('Amplitud [S]')
     ax2.legend()
     ax2.grid(True)
    
     #%%
-    # Separo en secciones
-    ruta_carpeta = 'RegistrosDia'
-    seniales_diarias = []
-    seniales_nocturnas = []
+    promedioFemenino, promedioMasculino = promedioPorGenero(all_filtered_signals)
+    derivFem = derivative(promedioFemenino)
+    derivMas = derivative(promedioMasculino)
     
-    for tupla in all_filtered_signals:
-        nombre_archivo = tupla[0]
-        ruta_completa = os.path.join(ruta_carpeta, nombre_archivo)
+    tderiv = t[0:12800]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 7))
+    fig.suptitle("Derivada del promedio por generos", fontsize = 20);
+    ax1.set_title("Masculino", fontsize = 15)
+    ax1.plot(tderiv,derivMas,'b') 
+    ax1.set_xlabel('Tiempo [s]')
+    ax1.set_ylabel('Amplitud [S/s]', fontsize = 12)
+    ax1.set_ylim([-0.005,0.008])
+    ax1.grid(True)
+ 
+    ax2.set_title("Femenino", fontsize = 15)
+    ax2.plot(tderiv,derivFem,'r') 
+    ax2.set_xlabel('Tiempo [s]')
+    ax2.set_ylabel('Amplitud [S/s]', fontsize = 12)
+    ax2.set_ylim([-0.005,0.008])
+    ax2.grid(True)
     
-        if os.path.isfile(ruta_completa):
-            seniales_diarias.append(tupla)
-        
-        else:
-             seniales_nocturnas.append(tupla)
+    #%% Espectro derivada Generos
+    
+    f, E_Masculino = fft_mag(derivMas)
+   
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 7))
+    fig.suptitle("Espectro de la derivada del promedio por generos", fontsize = 20);
+    ax1.set_title("Masculino", fontsize = 15)
+    ax1.plot(f,E_Masculino,'b') 
+    ax1.set_xlabel('Frecuencia [Hz]')
+    ax1.set_ylabel('Amplitud [S/s]', fontsize = 12)
+    ax1.set_xlim([0 ,0.1])
+    ax1.grid(True)
+    
+    f, E_Femenino = fft_mag(derivFem)
+    ax2.set_title("Femenino", fontsize = 15)
+    ax2.plot(f,E_Femenino,'r') 
+    ax2.set_xlabel('Frecuencia [Hz]')
+    ax2.set_ylabel('Amplitud [S/s]', fontsize = 12)
+    ax2.set_xlim([0 ,0.1])
+    ax2.grid(True)
 
-   # Dia y tardecita:
-    promedio_dia = promediar(seniales_diarias)
-    desvio_dia = calcularDesvio(seniales_diarias, promedio_dia)
+   #%%
+   #  # Separo en secciones
+   #  ruta_carpeta = 'RegistrosDia'
+   #  seniales_diarias = []
+   #  seniales_nocturnas = []
     
-    promedio_noche = promediar(seniales_nocturnas)
-    desvio_noche = calcularDesvio(seniales_nocturnas, promedio_noche)
+   #  for tupla in all_filtered_signals:
+   #      nombre_archivo = tupla[0]
+   #      ruta_completa = os.path.join(ruta_carpeta, nombre_archivo)
     
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-    plt.suptitle("Comparación entre mediciones")
-    ax1.plot(t,promedio_dia,'c', label = 'Promedio')
-    ax1.plot(t,desvioCorregido(promedio_dia + desvio_dia), '--g', label = 'Desvio')
-    ax1.plot(t,desvioCorregido(promedio_dia - desvio_dia), '--g')
+   #      if os.path.isfile(ruta_completa):
+   #          seniales_diarias.append(tupla)
+        
+   #      else:
+   #           seniales_nocturnas.append(tupla)
+
+   # # Dia y tardecita:
+   #  promedio_dia = promediar(seniales_diarias)
+   #  desvio_dia = calcularDesvio(seniales_diarias, promedio_dia)
     
-    ax1.set_title("Promedio de las Señales medidas a la mañana")
-    ax1.set_xlabel('Tiempo [s]')
-    ax1.set_ylabel('Amplitud [Ω]')
-    ax1.legend()
-    ax1.grid(True)
+   #  promedio_noche = promediar(seniales_nocturnas)
+   #  desvio_noche = calcularDesvio(seniales_nocturnas, promedio_noche)
     
-    ax2.plot(t,promedio_noche,'c', label = 'Promedio')
-    ax2.plot(t,desvioCorregido(promedio_noche + desvio_noche), '--g', label = 'Desvio')
-    ax2.plot(t,desvioCorregido(promedio_noche - desvio_noche), '--g')
+   #  fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+   #  plt.suptitle("Comparación entre mediciones")
+   #  ax1.plot(t,promedio_dia,'c', label = 'Promedio')
+   #  ax1.plot(t,desvioCorregido(promedio_dia + desvio_dia), '--g', label = 'Desvio')
+   #  ax1.plot(t,desvioCorregido(promedio_dia - desvio_dia), '--g')
     
-    ax2.set_title("Promedio de las Señales medidas a la tarde")
-    ax2.set_xlabel('Tiempo [s]')
-    ax2.set_ylabel('Amplitud [Ω]')
-    ax2.legend()
-    ax2.grid(True)
+   #  ax1.set_title("Promedio de las Señales medidas a la mañana")
+   #  ax1.set_xlabel('Tiempo [s]')
+   #  ax1.set_ylabel('Amplitud [Ω]')
+   #  ax1.legend()
+   #  ax1.grid(True)
     
-    #%% Mujeres vs hombres turno mñn
-    promedioFemenino, promedioMasculino = promedioPorGenero(seniales_diarias)
-    desvio_femenino, desvio_masculino = desvioPorGenero(seniales_diarias, promedioFemenino, promedioMasculino)
+   #  ax2.plot(t,promedio_noche,'c', label = 'Promedio')
+   #  ax2.plot(t,desvioCorregido(promedio_noche + desvio_noche), '--g', label = 'Desvio')
+   #  ax2.plot(t,desvioCorregido(promedio_noche - desvio_noche), '--g')
+    
+   #  ax2.set_title("Promedio de las Señales medidas a la tarde")
+   #  ax2.set_xlabel('Tiempo [s]')
+   #  ax2.set_ylabel('Amplitud [Ω]')
+   #  ax2.legend()
+   #  ax2.grid(True)
+    
+   #  #%% Mujeres vs hombres turno mñn
+   #  promedioFemenino, promedioMasculino = promedioPorGenero(seniales_diarias)
+   #  desvio_femenino, desvio_masculino = desvioPorGenero(seniales_diarias, promedioFemenino, promedioMasculino)
       
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-    fig.suptitle("Promedios por genero medidos a la mañana");
-    ax1.set_title("Promedio  masculino")
-    ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
-    ax1.plot(t,desvioCorregido(promedioMasculino + desvio_masculino), '--g', label = 'Desvio')
-    ax1.plot(t,desvioCorregido(promedioMasculino - desvio_masculino), '--g')
-    ax1.set_xlabel('Tiempo [s]')
-    ax1.set_ylabel('Amplitud [Ω]')
-    ax1.legend()
-    ax1.grid(True)
+   #  fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+   #  fig.suptitle("Promedios por genero medidos a la mañana");
+   #  ax1.set_title("Promedio  masculino")
+   #  ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
+   #  ax1.plot(t,desvioCorregido(promedioMasculino + desvio_masculino), '--g', label = 'Desvio')
+   #  ax1.plot(t,desvioCorregido(promedioMasculino - desvio_masculino), '--g')
+   #  ax1.set_xlabel('Tiempo [s]')
+   #  ax1.set_ylabel('Amplitud [Ω]')
+   #  ax1.legend()
+   #  ax1.grid(True)
  
-    ax2.set_title("Promedio  femenino")
-    ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
-    ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
-    ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
-    ax2.set_xlabel('Tiempo [s]')
-    ax2.set_ylabel('Amplitud [Ω]')
-    ax2.legend()
-    ax2.grid(True)
+   #  ax2.set_title("Promedio  femenino")
+   #  ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
+   #  ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
+   #  ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
+   #  ax2.set_xlabel('Tiempo [s]')
+   #  ax2.set_ylabel('Amplitud [Ω]')
+   #  ax2.legend()
+   #  ax2.grid(True)
     
-    #%% Mujeres vs hombres turno tarde
-    promedioFemenino, promedioMasculino = promedioPorGenero(seniales_nocturnas)
-    desvio_femenino, desvio_masculino = desvioPorGenero(seniales_nocturnas, promedioFemenino, promedioMasculino)
+   #  #%% Mujeres vs hombres turno tarde
+   #  promedioFemenino, promedioMasculino = promedioPorGenero(seniales_nocturnas)
+   #  desvio_femenino, desvio_masculino = desvioPorGenero(seniales_nocturnas, promedioFemenino, promedioMasculino)
       
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-    fig.suptitle("Promedios por genero medidos a la tarde");
-    ax1.set_title("Promedio  masculino")
-    ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
-    ax1.plot(t,desvioCorregido(promedioMasculino + desvio_masculino), '--g', label = 'Desvio')
-    ax1.plot(t,desvioCorregido(promedioMasculino - desvio_masculino), '--g')
-    ax1.set_xlabel('Tiempo [s]')
-    ax1.set_ylabel('Amplitud [Ω]')
-    ax1.legend()
-    ax1.grid(True)
+   #  fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+   #  fig.suptitle("Promedios por genero medidos a la tarde");
+   #  ax1.set_title("Promedio  masculino")
+   #  ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
+   #  ax1.plot(t,desvioCorregido(promedioMasculino + desvio_masculino), '--g', label = 'Desvio')
+   #  ax1.plot(t,desvioCorregido(promedioMasculino - desvio_masculino), '--g')
+   #  ax1.set_xlabel('Tiempo [s]')
+   #  ax1.set_ylabel('Amplitud [Ω]')
+   #  ax1.legend()
+   #  ax1.grid(True)
  
-    ax2.set_title("Promedio  femenino")
-    ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
-    ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
-    ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
-    ax2.set_xlabel('Tiempo [s]')
-    ax2.set_ylabel('Amplitud [Ω]')
-    ax2.legend()
-    ax2.grid(True)
+   #  ax2.set_title("Promedio  femenino")
+   #  ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
+   #  ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
+   #  ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
+   #  ax2.set_xlabel('Tiempo [s]')
+   #  ax2.set_ylabel('Amplitud [Ω]')
+   #  ax2.legend()
+   #  ax2.grid(True)
