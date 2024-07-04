@@ -464,70 +464,32 @@ if __name__ == "__main__":
             all_filtered_signals.append((filename, Senial))
             
             # Graficar la señal en el tiempo
-            plot_time_signal(Senial, fs=fs, title=f"Señal Filtrada en el Tiempo - {filename}")
-            #plot_frequency_spectrum(Senial)
-        
+            # plot_time_signal(Senial, fs=fs, title=f"Señal Filtrada en el Tiempo - {filename}")
+                    
 
     # Graficar todas las señales filtradas solapadas
-    plt.figure(figsize=(12, 8))
-    for filename, signal in all_filtered_signals:
-        N = len(signal)
-        T = 1/fs
-        t = np.linspace(0, N*T, N, endpoint=False)
-        plt.plot(t, signal)#, label=filename)
+    # plt.figure(figsize=(12, 8))
+    # for filename, signal in all_filtered_signals:
+    #     N = len(signal)
+    #     T = 1/fs
+    #     t = np.linspace(0, N*T, N, endpoint=False)
+    #     plt.plot(t, signal)#, label=filename)
         
         
-    plt.title("Todas las Señales Filtradas en el Tiempo")
-    plt.xlabel('Tiempo [s]')
-    plt.ylabel('Amplitud [Ω]')
-    # plt.legend()
-    plt.grid(True)
-    plt.show()
+    # plt.title("Todas las Señales Filtradas en el Tiempo")
+    # plt.xlabel('Tiempo [s]')
+    # plt.ylabel('Amplitud [Ω]')
+    # # plt.legend()
+    # plt.grid(True)
+    # plt.show()
     
-    
-    #%% no puedo aplicar la funcion pq no es una tupla ;)
-    prom = np.zeros(N);
-    
-    for i in range(N):    
-        for senial in seniales_sin_norm:
-            prom[i] += senial[i] 
-        prom[i]= prom[i]/len(seniales_sin_norm)
-    
-    # for i in range(N):
-    #     prom[i]= prom[i]/len(seniales_sin_norm);
-    
-    # Inicializar la suma de diferencias al cuadrado
-    suma_diff_cuad = [0] * len(seniales_sin_norm[0])
-    
-    # Sumar las diferencias al cuadrado para cada vector
-    for senial in seniales_sin_norm:
-        diff_cuad = [(senial[i] - prom[i]) ** 2 for i in range(len(senial))]
-        suma_diff_cuad = [suma_diff_cuad[i] + diff_cuad[i] for i in range(len(senial))]
-    
-    # Calcular la varianza dividiendo por el número de vectores
-    varianza = [suma_diff_cuad[i] / len(seniales_sin_norm) for i in range(len(suma_diff_cuad))]
-    
-    desvio_estandar = [math.sqrt(varianza[i]) for i in range(len(varianza))]
-       
-    VdesMax = (prom+desvio_estandar)
-    VdesMin = (prom-desvio_estandar)
-    
-    plt.figure(figsize=(12, 8))
-    
-    plt.plot(t,prom,'g', label = 'Promedio')
-    plt.plot(t,VdesMax, '--r', label = 'Desvio')
-    plt.plot(t,VdesMin, '--r')
-    
-
-    plt.title("Promedio de todas las Señales")
-    plt.xlabel('Tiempo [s]')
-    plt.ylabel('Amplitud [Ω]')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
     
     #%% Lo mismo que antes pero el promedio tiene las señales normalizadas
-     
+    
+    T = 1/fs
+    N = len(all_filtered_signals[1][1])
+    t = np.linspace(0, N*T, N, endpoint=False)
+    
     promedio  = promediar(all_filtered_signals)
     desvio = calcularDesvio(all_filtered_signals, promedio)
     
@@ -540,6 +502,7 @@ if __name__ == "__main__":
     plt.title("Promedio de todas las Señales normalizadas")
     plt.xlabel('Tiempo [s]')
     plt.ylabel('Amplitud [S]')
+    plt.xlim([0,1280])
     
     # plt.axvline(100, color='c', linestyle=(0, (5, 10)), linewidth=1, label='Inicia el audio')
     # plt.axvline(1250, color="#D95319", linestyle=(0, (5, 10)), linewidth=1, label='Finaliza el audio')
@@ -558,6 +521,7 @@ if __name__ == "__main__":
     plt.title("Derivada del promedio de todas las Señales")
     plt.xlabel('Tiempo [s]')
     plt.ylabel('Amplitud [S/s]')
+    plt.xlim([0,1280])
     plt.grid(True)
     plt.show()
   
@@ -579,22 +543,24 @@ if __name__ == "__main__":
     
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
-    fig.suptitle("Promedio y desvio estandar en todas las mediciones")
-    ax1.set_title("Promedio  masculino")
+    fig.suptitle("Promedio y desvio estandar en todas las mediciones", fontsize = 18)
+    ax1.set_title("Promedio  masculino", fontsize = 15)
     ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
     ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
     ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
-    ax1.set_xlabel('Tiempo [s]')
-    ax1.set_ylabel('Amplitud [S]')
+    ax1.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax1.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax1.set_xlim([0,1280])
     ax1.legend()
     ax1.grid(True)
     
-    ax2.set_title("Promedio  femenino")
+    ax2.set_title("Promedio  femenino", fontsize = 15)
     ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
     ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
     ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
-    ax2.set_xlabel('Tiempo [s]')
-    ax2.set_ylabel('Amplitud [S]')
+    ax2.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax2.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax2.set_xlim([0,1280])
     ax2.legend()
     ax2.grid(True)
    
@@ -611,6 +577,7 @@ if __name__ == "__main__":
     ax1.set_xlabel('Tiempo [s]')
     ax1.set_ylabel('Amplitud [S/s]', fontsize = 12)
     ax1.set_ylim([-0.005,0.008])
+    ax1.set_xlim([0,1280])
     ax1.grid(True)
  
     ax2.set_title("Femenino", fontsize = 15)
@@ -618,6 +585,7 @@ if __name__ == "__main__":
     ax2.set_xlabel('Tiempo [s]')
     ax2.set_ylabel('Amplitud [S/s]', fontsize = 12)
     ax2.set_ylim([-0.005,0.008])
+    ax2.set_xlim([0,1280])
     ax2.grid(True)
     
     #%% Espectro derivada Generos
