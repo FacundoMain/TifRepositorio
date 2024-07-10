@@ -145,7 +145,7 @@ def load_samples(filename):
    
     return data
 
-def derivative(data, fs=10, threshold = 0.0085):
+def derivative(data, fs=10, threshold = 0.005):
     '''
     Calcula la derivada numérica de una señal en el dominio del tiempo.
 
@@ -175,7 +175,7 @@ def derivative(data, fs=10, threshold = 0.0085):
     
     return d_data_adjusted
 
-def adaptive_threshold(signal, window_size = 30, k=  2):
+def adaptive_threshold(signal, window_size = 30, k =  1.1):
     
     # window_size =Tamaño de la ventana para el cálculo del umbral
     # K = Factor de escalado para el umbral adaptativo
@@ -189,7 +189,7 @@ def adaptive_threshold(signal, window_size = 30, k=  2):
     return thresholds
 
 
-def moving_average(data, window_size=50):
+def moving_average(data, window_size= 60):
     '''
     Aplica un filtro de media móvil a una señal en el dominio del tiempo.
 
@@ -229,10 +229,10 @@ def remove_dc(data):
      
     smoothed_data = moving_average(filtered_data)
     
-    if len(filtered_data) == len(data):
-        filtered_data = filtered_data[:-1]
+    if len(smoothed_data) == len(data):
+        smoothed_data = smoothed_data[:-1]
     
-    return filtered_data
+    return smoothed_data
 
 
 def normalizador(data):
@@ -582,7 +582,78 @@ if __name__ == "__main__":
     ax2.set_xlim([0,len(tderiv)/10])
     ax2.legend()
     ax2.grid(True)
+    
+    
+    
+    #%% separo en secciones
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+    fig.suptitle("Promedio y desvio estandar en primer segmento", fontsize = 18)
+    ax1.set_title("Promedio  masculino", fontsize = 15)
+    ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
+    ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
+    ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
+    ax1.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax1.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax1.set_xlim([0,400])
+    ax1.legend()
+    ax1.grid(True)
+
+    ax2.set_title("Promedio  femenino", fontsize = 15)
+    ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
+    ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
+    ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
+    ax2.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax2.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax2.set_xlim([0,400])
+    ax2.legend()
+    ax2.grid(True)
    
+    
+   #%% segmento 2
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+    fig.suptitle("Promedio y desvio estandar en el segundo segmento", fontsize = 18)
+    ax1.set_title("Promedio  masculino", fontsize = 15)
+    ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
+    ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
+    ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
+    ax1.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax1.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax1.set_xlim([401,1226])
+    ax1.legend()
+    ax1.grid(True)
+
+    ax2.set_title("Promedio  femenino", fontsize = 15)
+    ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
+    ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
+    ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
+    ax2.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax2.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax2.set_xlim([401,1226])
+    ax2.legend()
+    ax2.grid(True)
+    
+    #%% segmento 3
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+    fig.suptitle("Promedio y desvio estandar en el tercer segmento", fontsize = 18)
+    ax1.set_title("Promedio  masculino", fontsize = 15)
+    ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
+    ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
+    ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
+    ax1.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax1.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax1.set_xlim([1226,len(t)/10])
+    ax1.legend()
+    ax1.grid(True)
+
+    ax2.set_title("Promedio  femenino", fontsize = 15)
+    ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
+    ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
+    ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
+    ax2.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax2.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax2.set_xlim([1226,len(t)/10])
+    ax2.legend()
+    ax2.grid(True)
     
     #%%
     promedioFemenino, promedioMasculino = promedioPorGenero(all_filtered_signals)
