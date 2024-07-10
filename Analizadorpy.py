@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from scipy.signal import firwin, lfilter, butter, filtfilt
+from scipy.signal import firwin, lfilter, butter, filtfilt, savgol_filter, find_peaks
 from scipy import fft
 import matplotlib.pyplot as plt
 import math
@@ -145,7 +145,7 @@ def load_samples(filename):
    
     return data
 
-def derivative(data, fs=10):
+def derivative(data, fs=10, threshold = 0.0085):
     '''
     Calcula la derivada numérica de una señal en el dominio del tiempo.
 
@@ -166,11 +166,30 @@ def derivative(data, fs=10):
     # Diferencia centrada excepto para los bordes
     d_data = np.diff(data) / dt
     
-    d_data[0:30] = d_data[35]
-    return d_data
+    # Ajustar valores de la derivada en el umbral
+    d_data_adjusted = np.copy(d_data)
+    d_data_adjusted[np.abs(d_data) < threshold] = 0
+    
+    d_data_adjusted[0:30] = d_data_adjusted[35]
+    
+    
+    return d_data_adjusted
+
+def adaptive_threshold(signal, window_size = 30, k=  2):
+    
+    # window_size =Tamaño de la ventana para el cálculo del umbral
+    # K = Factor de escalado para el umbral adaptativo
+    
+    thresholds = np.zeros(len(signal))
+    for i in range(window_size, len(signal)):
+        window = signal[i-window_size:i]
+        mean = np.mean(window)
+        std_dev = np.std(window)
+        thresholds[i] = mean + k * std_dev
+    return thresholds
 
 
-def moving_average(data, window_size=400):
+def moving_average(data, window_size=50):
     '''
     Aplica un filtro de media móvil a una señal en el dominio del tiempo.
 
@@ -210,10 +229,10 @@ def remove_dc(data):
      
     smoothed_data = moving_average(filtered_data)
     
-    if len(smoothed_data) == 12802:
-        smoothed_data = smoothed_data[:-1]
+    if len(filtered_data) == len(data):
+        filtered_data = filtered_data[:-1]
     
-    return smoothed_data
+    return filtered_data
 
 
 def normalizador(data):
@@ -314,8 +333,8 @@ def calcularDesvio(all_filtered_signals, promedio):
     
     # Sumar las diferencias al cuadrado para cada vector
     for senial in seniales_norm:
-        diff_cuad = [(senial[i] - promedio[i]) ** 2 for i in range(len(senial))]
-        suma_diff_cuad = [suma_diff_cuad[i] + diff_cuad[i] for i in range(len(senial))]
+        diff_cuad = [(senial[i] - promedio[i]) ** 2 for i in range(len(Senial))]
+        suma_diff_cuad = [suma_diff_cuad[i] + diff_cuad[i] for i in range(len(Senial))]
     
     # Calcular la varianza dividiendo por el número de vectores
     varianza = [suma_diff_cuad[i] / len(seniales_sin_norm) for i in range(len(suma_diff_cuad))]
@@ -502,7 +521,7 @@ if __name__ == "__main__":
     plt.title("Promedio de todas las Señales normalizadas")
     plt.xlabel('Tiempo [s]')
     plt.ylabel('Amplitud [S]')
-    plt.xlim([0,1280])
+    plt.xlim([0,len(t)/10])
     
     # plt.axvline(100, color='c', linestyle=(0, (5, 10)), linewidth=1, label='Inicia el audio')
     # plt.axvline(1250, color="#D95319", linestyle=(0, (5, 10)), linewidth=1, label='Finaliza el audio')
@@ -514,14 +533,14 @@ if __name__ == "__main__":
     
     #%%
     derivTotal = derivative(promedio)
-    tderiv = t[0:12800]
+    tderiv = t[0:len(t)-1]
     
     plt.figure(figsize=(12, 8))
     plt.plot(tderiv,derivTotal,'black', label = 'Promedio')
     plt.title("Derivada del promedio de todas las Señales")
     plt.xlabel('Tiempo [s]')
     plt.ylabel('Amplitud [S/s]')
-    plt.xlim([0,1280])
+    plt.xlim([0,len(tderiv)/10])
     plt.grid(True)
     plt.show()
   
@@ -550,43 +569,45 @@ if __name__ == "__main__":
     ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
     ax1.set_xlabel('Tiempo [s]', fontsize = 12)
     ax1.set_ylabel('Amplitud [S]', fontsize = 12)
-    ax1.set_xlim([0,1280])
+    ax1.set_xlim([0,len(tderiv)/10])
     ax1.legend()
     ax1.grid(True)
-    
+
     ax2.set_title("Promedio  femenino", fontsize = 15)
     ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
     ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
     ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
     ax2.set_xlabel('Tiempo [s]', fontsize = 12)
     ax2.set_ylabel('Amplitud [S]', fontsize = 12)
-    ax2.set_xlim([0,1280])
+    ax2.set_xlim([0,len(tderiv)/10])
     ax2.legend()
     ax2.grid(True)
    
+    
     #%%
     promedioFemenino, promedioMasculino = promedioPorGenero(all_filtered_signals)
     derivFem = derivative(promedioFemenino)
     derivMas = derivative(promedioMasculino)
     
-    tderiv = t[0:12800]
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 7))
     fig.suptitle("Derivada del promedio por generos", fontsize = 20);
     ax1.set_title("Masculino", fontsize = 15)
     ax1.plot(tderiv,derivMas,'b') 
     ax1.set_xlabel('Tiempo [s]')
     ax1.set_ylabel('Amplitud [S/s]', fontsize = 12)
-    ax1.set_ylim([-0.005,0.008])
-    ax1.set_xlim([0,1280])
+    #ax1.set_ylim([-0.005,0.008])
+    ax1.set_xlim([0,len(tderiv)/10])
     ax1.grid(True)
  
     ax2.set_title("Femenino", fontsize = 15)
     ax2.plot(tderiv,derivFem,'r') 
     ax2.set_xlabel('Tiempo [s]')
     ax2.set_ylabel('Amplitud [S/s]', fontsize = 12)
-    ax2.set_ylim([-0.005,0.008])
-    ax2.set_xlim([0,1280])
+    #ax2.set_ylim([-0.005,0.008])
+    ax2.set_xlim([0,len(tderiv)/10])
     ax2.grid(True)
+    
+    
     
     #%% Espectro derivada Generos
     
@@ -599,7 +620,7 @@ if __name__ == "__main__":
     ax1.plot(f,E_Masculino,'b') 
     ax1.set_xlabel('Frecuencia [Hz]')
     ax1.set_ylabel('Amplitud [S/s]', fontsize = 12)
-    ax1.set_xlim([0 ,0.1])
+    ax1.set_xlim([0 ,1])
     ax1.grid(True)
     
     f, E_Femenino = fft_mag(derivFem)
@@ -607,8 +628,11 @@ if __name__ == "__main__":
     ax2.plot(f,E_Femenino,'r') 
     ax2.set_xlabel('Frecuencia [Hz]')
     ax2.set_ylabel('Amplitud [S/s]', fontsize = 12)
-    ax2.set_xlim([0 ,0.1])
+    ax2.set_xlim([0 ,1])
     ax2.grid(True)
+    
+
+ 
 
    #%%
    #  # Separo en secciones
