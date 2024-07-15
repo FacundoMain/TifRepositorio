@@ -61,7 +61,7 @@ def plot_time_signal(data, fs=10, title="Señal en el Tiempo"):
     plt.legend()
     plt.show()
 
-def fir_lowpass_filter(data, cutoff=0.1, fs=10, numtaps=31):
+def fir_lowpass_filter(data, cutoff=1, fs=10, numtaps=31):
     '''
     Aplica un filtro pasabajos FIR a una señal en el dominio del tiempo.
 
