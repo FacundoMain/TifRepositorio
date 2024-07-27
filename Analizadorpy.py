@@ -1,10 +1,10 @@
 import os
 import numpy as np
-from scipy.signal import firwin, lfilter, butter, filtfilt, savgol_filter, find_peaks
+from scipy.signal import firwin, lfilter, butter, filtfilt, savgol_filter, find_peaks 
 from scipy import fft
 import matplotlib.pyplot as plt
 import math
-
+import scipy.stats as stats
 def fft_mag(x, fs = 10):
     """
     ------------------------
@@ -61,7 +61,7 @@ def plot_time_signal(data, fs=10, title="Señal en el Tiempo"):
     plt.legend()
     plt.show()
 
-def fir_lowpass_filter(data, cutoff=1, fs=10, numtaps=31):
+def fir_lowpass_filter(data, cutoff=0.1, fs=10, numtaps=31):
     '''
     Aplica un filtro pasabajos FIR a una señal en el dominio del tiempo.
 
@@ -175,7 +175,7 @@ def derivative(data, fs=10, threshold = 0.005):
     
     return d_data_adjusted
 
-def adaptive_threshold(signal, window_size = 30, k =  1.1):
+def adaptive_threshold(signal, window_size = 20, k =  1.35):
     
     # window_size =Tamaño de la ventana para el cálculo del umbral
     # K = Factor de escalado para el umbral adaptativo
@@ -702,98 +702,104 @@ if __name__ == "__main__":
     ax2.set_xlim([0 ,1])
     ax2.grid(True)
     
+#%% 
+    fig, (ax3, ax4) = plt.subplots(1, 2, figsize=(16, 8))
+    fig.suptitle("Promedio y desvio estandar en segundo segmento", fontsize = 18)
+    ax3.set_title("Promedio  masculino", fontsize = 15)
+    ax3.plot(t,promedioMasculino,'b', label = 'Promedio')
+    ax3.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
+    ax3.plot(t,promedioMasculino - desvio_masculino, '--g')
+    ax3.plot(115, promedioMasculino[1149], 'ro', markersize=4, label='Picos')
+    ax3.plot(515, promedioMasculino[5150], 'ro', markersize=4)
+    ax3.plot(630, promedioMasculino[6300], 'ro', markersize=4)
+    ax3.plot(800, promedioMasculino[8000], 'ro', markersize=4)
+    ax3.plot(1095, promedioMasculino[10950], 'ro', markersize=4)
+    ax3.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax3.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax3.set_xlim([401,1226])
+    # ax3.set_xlim([0,400])
+    ax3.legend()
+    ax3.grid(True)
 
- 
+    ax4.set_title("Promedio  femenino", fontsize = 15)
+    ax4.plot(t,promedioFemenino,'r', label = 'Promedio')
+    ax4.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
+    ax4.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
+    ax4.plot(115, promedioFemenino[1149], 'bo', markersize=4, label='Picos')
+    ax4.plot(955, promedioFemenino[9580], 'bo', markersize=4)
+    ax4.plot(790, promedioFemenino[7900], 'bo', markersize=4)
+    ax4.plot(1105, promedioFemenino[11050], 'bo', markersize=4)
+    ax4.plot(1015, promedioFemenino[10150], 'bo', markersize=4)
+    ax4.plot(510, promedioFemenino[5100], 'bo', markersize=4)
+    ax4.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax4.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax4.set_xlim([401,1226])
+    # ax4.set_xlim([0,400])
+    ax4.legend()
+    ax4.grid(True)
+#%% PRUEBA DE SIGNIFICANCIA
+t_stat, p_value = stats.ttest_ind(promedioMasculino[0:4000], promedioFemenino[0:4000])
 
-   #%%
-   #  # Separo en secciones
-   #  ruta_carpeta = 'RegistrosDia'
-   #  seniales_diarias = []
-   #  seniales_nocturnas = []
-    
-   #  for tupla in all_filtered_signals:
-   #      nombre_archivo = tupla[0]
-   #      ruta_completa = os.path.join(ruta_carpeta, nombre_archivo)
-    
-   #      if os.path.isfile(ruta_completa):
-   #          seniales_diarias.append(tupla)
-        
-   #      else:
-   #           seniales_nocturnas.append(tupla)
+# Imprime los resultados
+print(f"Estadístico t: {t_stat} en primer segmento")
+print(f"Valor p: {p_value} en primer segmento")
 
-   # # Dia y tardecita:
-   #  promedio_dia = promediar(seniales_diarias)
-   #  desvio_dia = calcularDesvio(seniales_diarias, promedio_dia)
+# Decide si rechazar o no la hipótesis nula
+alpha = 0.05
+if p_value < alpha:
+    print("PRIMER SEGMENTO: Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
+else:
+    print("PRIMER SEGMENTO: No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
     
-   #  promedio_noche = promediar(seniales_nocturnas)
-   #  desvio_noche = calcularDesvio(seniales_nocturnas, promedio_noche)
     
-   #  fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-   #  plt.suptitle("Comparación entre mediciones")
-   #  ax1.plot(t,promedio_dia,'c', label = 'Promedio')
-   #  ax1.plot(t,desvioCorregido(promedio_dia + desvio_dia), '--g', label = 'Desvio')
-   #  ax1.plot(t,desvioCorregido(promedio_dia - desvio_dia), '--g')
+t_stat, p_value = stats.ttest_ind(promedioMasculino[4001:12250], promedioFemenino[4001:12250])
+# Imprime los resultados
+print(f"Estadístico t: {t_stat} en segundo segmento")
+print(f"Valor p: {p_value} en segundo segmento")
+
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.05
+if p_value < alpha:
+    print("SEGUNDO SEGMENTO: Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
+else:
+    print("SEGUNDO SEGMENTO: No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
+t_stat, p_value = stats.ttest_ind(promedioMasculino[12251:13141], promedioFemenino[12251:13141])
+# Imprime los resultados
+print(f"Estadístico t: {t_stat} en tercer segmento")
+print(f"Valor p: {p_value} en tercer segmento")
+
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.05
+if p_value < alpha:
+    print("TERCER SEGMENTO: Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
+else:
+    print("TERCER SEGMENTO: No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
     
-   #  ax1.set_title("Promedio de las Señales medidas a la mañana")
-   #  ax1.set_xlabel('Tiempo [s]')
-   #  ax1.set_ylabel('Amplitud [Ω]')
-   #  ax1.legend()
-   #  ax1.grid(True)
-    
-   #  ax2.plot(t,promedio_noche,'c', label = 'Promedio')
-   #  ax2.plot(t,desvioCorregido(promedio_noche + desvio_noche), '--g', label = 'Desvio')
-   #  ax2.plot(t,desvioCorregido(promedio_noche - desvio_noche), '--g')
-    
-   #  ax2.set_title("Promedio de las Señales medidas a la tarde")
-   #  ax2.set_xlabel('Tiempo [s]')
-   #  ax2.set_ylabel('Amplitud [Ω]')
-   #  ax2.legend()
-   #  ax2.grid(True)
-    
-   #  #%% Mujeres vs hombres turno mñn
-   #  promedioFemenino, promedioMasculino = promedioPorGenero(seniales_diarias)
-   #  desvio_femenino, desvio_masculino = desvioPorGenero(seniales_diarias, promedioFemenino, promedioMasculino)
-      
-   #  fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-   #  fig.suptitle("Promedios por genero medidos a la mañana");
-   #  ax1.set_title("Promedio  masculino")
-   #  ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
-   #  ax1.plot(t,desvioCorregido(promedioMasculino + desvio_masculino), '--g', label = 'Desvio')
-   #  ax1.plot(t,desvioCorregido(promedioMasculino - desvio_masculino), '--g')
-   #  ax1.set_xlabel('Tiempo [s]')
-   #  ax1.set_ylabel('Amplitud [Ω]')
-   #  ax1.legend()
-   #  ax1.grid(True)
- 
-   #  ax2.set_title("Promedio  femenino")
-   #  ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
-   #  ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
-   #  ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
-   #  ax2.set_xlabel('Tiempo [s]')
-   #  ax2.set_ylabel('Amplitud [Ω]')
-   #  ax2.legend()
-   #  ax2.grid(True)
-    
-   #  #%% Mujeres vs hombres turno tarde
-   #  promedioFemenino, promedioMasculino = promedioPorGenero(seniales_nocturnas)
-   #  desvio_femenino, desvio_masculino = desvioPorGenero(seniales_nocturnas, promedioFemenino, promedioMasculino)
-      
-   #  fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-   #  fig.suptitle("Promedios por genero medidos a la tarde");
-   #  ax1.set_title("Promedio  masculino")
-   #  ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
-   #  ax1.plot(t,desvioCorregido(promedioMasculino + desvio_masculino), '--g', label = 'Desvio')
-   #  ax1.plot(t,desvioCorregido(promedioMasculino - desvio_masculino), '--g')
-   #  ax1.set_xlabel('Tiempo [s]')
-   #  ax1.set_ylabel('Amplitud [Ω]')
-   #  ax1.legend()
-   #  ax1.grid(True)
- 
-   #  ax2.set_title("Promedio  femenino")
-   #  ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
-   #  ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
-   #  ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
-   #  ax2.set_xlabel('Tiempo [s]')
-   #  ax2.set_ylabel('Amplitud [Ω]')
-   #  ax2.legend()
-   #  ax2.grid(True)
+#%% ANalisis intervalos para matriz de correlacion:
+# Dividir los datos en segmentos
+segmento1 = promedio[0:4000]
+segmento2 = promedio[4001:12250]
+segmento3 = promedio[12251:13141]
+# Prueba de Levene para igualdad de varianzas
+levene_stat12, levene_p12 = stats.levene(segmento1, segmento2)
+levene_stat13, levene_p13 = stats.levene(segmento1, segmento3)
+levene_stat23, levene_p23 = stats.levene(segmento2, segmento3)
+
+# Determinar si usar equal_var=True o False en función del resultado de Levene
+equal_var_12 = levene_p12 > 0.05
+equal_var_13 = levene_p13 > 0.05
+equal_var_23 = levene_p23 > 0.05
+
+# Realizar pruebas t de Student
+t_stat12, p_value12 = stats.ttest_ind(segmento1, segmento2, equal_var=equal_var_12)
+t_stat13, p_value13 = stats.ttest_ind(segmento1, segmento3, equal_var=equal_var_13)
+t_stat23, p_value23 = stats.ttest_ind(segmento2, segmento3, equal_var=equal_var_23)
+
+# Crear la tabla de resultados
+comparison_table_corrected = {
+    "Segmento 1": ["1", f"p-value: {p_value12:.6f}", f"p-value: {p_value13:.6f}"],
+    "Segmento 2": [f"p-value: {p_value12:.6f}", "1", f"p-value: {p_value23:.6f}"],
+    "Segmento 3": [f"p-value: {p_value13:.6f}", f"p-value: {p_value23:.6f}", "1"]
+}
+comparison_table_corrected
+
