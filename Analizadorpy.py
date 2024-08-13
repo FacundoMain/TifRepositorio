@@ -1,10 +1,13 @@
 import os
 import numpy as np
 from scipy.signal import firwin, lfilter, butter, filtfilt, savgol_filter, find_peaks 
-from scipy import fft
+from scipy import fft,stats
 import matplotlib.pyplot as plt
 import math
 import scipy.stats as stats
+from scipy.interpolate import CubicSpline
+from scipy.optimize import curve_fit
+
 def fft_mag(x, fs = 10):
     """
     ------------------------
@@ -141,7 +144,7 @@ def load_samples(filename):
         Vector con los datos cargados.
     '''
     data = np.loadtxt(filename)
-    data = 1/data
+    data = 1/data *1e6
    
     return data
 
@@ -173,7 +176,7 @@ def derivative(data, fs=10, threshold = 0.005):
     d_data_adjusted[0:30] = d_data_adjusted[35]
     
     
-    return d_data_adjusted
+    return d_data#d_data_adjusted
 
 def adaptive_threshold(signal, window_size = 20, k =  1.35):
     
@@ -512,49 +515,49 @@ if __name__ == "__main__":
     promedio  = promediar(all_filtered_signals)
     desvio = calcularDesvio(all_filtered_signals, promedio)
     
-    plt.figure(figsize=(12, 8))
+    # plt.figure(figsize=(12, 8))
     
-    plt.plot(t,promedio,'black', label = 'Promedio')
-    plt.plot(t,desvioCorregido(promedio+desvio), '--g', label = 'Desvio')
-    plt.plot(t,desvioCorregido(promedio-desvio), '--g')
+    # plt.plot(t,promedio,'black', label = 'Promedio')
+    # plt.plot(t,desvioCorregido(promedio+desvio), '--g', label = 'Desvio')
+    # plt.plot(t,desvioCorregido(promedio-desvio), '--g')
     
-    plt.title("Promedio de todas las Señales normalizadas")
-    plt.xlabel('Tiempo [s]')
-    plt.ylabel('Amplitud [S]')
-    plt.xlim([0,len(t)/10])
+    # plt.title("Promedio de todas las Señales normalizadas")
+    # plt.xlabel('Tiempo [s]')
+    # plt.ylabel('Amplitud [uS]')
+    # plt.xlim([0,len(t)/10])
     
-    # plt.axvline(100, color='c', linestyle=(0, (5, 10)), linewidth=1, label='Inicia el audio')
-    # plt.axvline(1250, color="#D95319", linestyle=(0, (5, 10)), linewidth=1, label='Finaliza el audio')
+    # # plt.axvline(100, color='c', linestyle=(0, (5, 10)), linewidth=1, label='Inicia el audio')
+    # # plt.axvline(1250, color="#D95319", linestyle=(0, (5, 10)), linewidth=1, label='Finaliza el audio')
 
 
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    # plt.legend()
+    # plt.grid(True)
+    # plt.show()
     
-    #%%
+    # #%%
     derivTotal = derivative(promedio)
     tderiv = t[0:len(t)-1]
     
-    plt.figure(figsize=(12, 8))
-    plt.plot(tderiv,derivTotal,'black', label = 'Promedio')
-    plt.title("Derivada del promedio de todas las Señales")
-    plt.xlabel('Tiempo [s]')
-    plt.ylabel('Amplitud [S/s]')
-    plt.xlim([0,len(tderiv)/10])
-    plt.grid(True)
-    plt.show()
+    # plt.figure(figsize=(12, 8))
+    # plt.plot(tderiv,derivTotal,'black', label = 'Promedio')
+    # plt.title("Derivada del promedio de todas las Señales")
+    # plt.xlabel('Tiempo [s]')
+    # plt.ylabel('Amplitud [S/s]')
+    # plt.xlim([0,len(tderiv)/10])
+    # plt.grid(True)
+    # plt.show()
   
-    #%%
+    # #%%
     f, E_total = fft_mag(derivTotal)
    
-    plt.figure(figsize=(12, 8))
-    plt.plot(f, E_total, 'black', label = 'Promedio')
-    plt.title("Espectro de la derivada del promedio")
-    plt.xlabel('Frecuencia [Hz]')
-    plt.ylabel('Amplitud [S/s]')
-    plt.xlim([0 ,0.1])
-    plt.grid(True)
-    plt.show()
+    # plt.figure(figsize=(12, 8))
+    # plt.plot(f, E_total, 'black', label = 'Promedio')
+    # plt.title("Espectro de la derivada del promedio")
+    # plt.xlabel('Frecuencia [Hz]')
+    # plt.ylabel('Amplitud [S/s]')
+    # plt.xlim([0 ,0.1])
+    # plt.grid(True)
+    # plt.show()
         
     #%% Promedio y desvio en hombres y mujeres total
     promedioFemenino, promedioMasculino = promedioPorGenero(all_filtered_signals)
@@ -568,7 +571,7 @@ if __name__ == "__main__":
     ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
     ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
     ax1.set_xlabel('Tiempo [s]', fontsize = 12)
-    ax1.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax1.set_ylabel('Amplitud', fontsize = 12)
     ax1.set_xlim([0,len(tderiv)/10])
     ax1.legend()
     ax1.grid(True)
@@ -578,7 +581,7 @@ if __name__ == "__main__":
     ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
     ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
     ax2.set_xlabel('Tiempo [s]', fontsize = 12)
-    ax2.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax2.set_ylabel('Amplitud', fontsize = 12)
     ax2.set_xlim([0,len(tderiv)/10])
     ax2.legend()
     ax2.grid(True)
@@ -593,8 +596,9 @@ if __name__ == "__main__":
     ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
     ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
     ax1.set_xlabel('Tiempo [s]', fontsize = 12)
-    ax1.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax1.set_ylabel('Amplitud', fontsize = 12)
     ax1.set_xlim([0,400])
+    ax1.plot(115, promedioMasculino[1140], 'ro', markersize=4, label='Picos')
     ax1.legend()
     ax1.grid(True)
 
@@ -605,6 +609,7 @@ if __name__ == "__main__":
     ax2.set_xlabel('Tiempo [s]', fontsize = 12)
     ax2.set_ylabel('Amplitud [S]', fontsize = 12)
     ax2.set_xlim([0,400])
+    ax2.plot(115, promedioFemenino[1140], 'bo', markersize=4, label='Picos')
     ax2.legend()
     ax2.grid(True)
    
@@ -617,7 +622,7 @@ if __name__ == "__main__":
     ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
     ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
     ax1.set_xlabel('Tiempo [s]', fontsize = 12)
-    ax1.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax1.set_ylabel('Amplitud', fontsize = 12)
     ax1.set_xlim([401,1226])
     ax1.legend()
     ax1.grid(True)
@@ -627,7 +632,7 @@ if __name__ == "__main__":
     ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
     ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
     ax2.set_xlabel('Tiempo [s]', fontsize = 12)
-    ax2.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax2.set_ylabel('Amplitud', fontsize = 12)
     ax2.set_xlim([401,1226])
     ax2.legend()
     ax2.grid(True)
@@ -640,7 +645,7 @@ if __name__ == "__main__":
     ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
     ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
     ax1.set_xlabel('Tiempo [s]', fontsize = 12)
-    ax1.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax1.set_ylabel('Amplitud', fontsize = 12)
     ax1.set_xlim([1226,len(t)/10])
     ax1.legend()
     ax1.grid(True)
@@ -650,7 +655,7 @@ if __name__ == "__main__":
     ax2.plot(t,desvioCorregido(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
     ax2.plot(t,desvioCorregido(promedioFemenino - desvio_femenino), '--g')
     ax2.set_xlabel('Tiempo [s]', fontsize = 12)
-    ax2.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax2.set_ylabel('Amplitud', fontsize = 12)
     ax2.set_xlim([1226,len(t)/10])
     ax2.legend()
     ax2.grid(True)
@@ -710,12 +715,12 @@ if __name__ == "__main__":
     ax3.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
     ax3.plot(t,promedioMasculino - desvio_masculino, '--g')
     ax3.plot(115, promedioMasculino[1149], 'ro', markersize=4, label='Picos')
-    ax3.plot(515, promedioMasculino[5150], 'ro', markersize=4)
+    ax3.plot(518, promedioMasculino[5150], 'ro', markersize=4)
     ax3.plot(630, promedioMasculino[6300], 'ro', markersize=4)
     ax3.plot(800, promedioMasculino[8000], 'ro', markersize=4)
     ax3.plot(1095, promedioMasculino[10950], 'ro', markersize=4)
     ax3.set_xlabel('Tiempo [s]', fontsize = 12)
-    ax3.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax3.set_ylabel('Amplitud', fontsize = 12)
     ax3.set_xlim([401,1226])
     # ax3.set_xlim([0,400])
     ax3.legend()
@@ -732,13 +737,31 @@ if __name__ == "__main__":
     ax4.plot(1015, promedioFemenino[10150], 'bo', markersize=4)
     ax4.plot(510, promedioFemenino[5100], 'bo', markersize=4)
     ax4.set_xlabel('Tiempo [s]', fontsize = 12)
-    ax4.set_ylabel('Amplitud [S]', fontsize = 12)
+    ax4.set_ylabel('Amplitud', fontsize = 12)
     ax4.set_xlim([401,1226])
     # ax4.set_xlim([0,400])
     ax4.legend()
     ax4.grid(True)
+    
+#%% Eleccion de prueba
+# Existe distribucion normal?
+
+# Test de Shapiro-Wilk para hombres
+stat_hombres, p_value_hombres = stats.shapiro(promedioMasculino)
+print('Shapiro-Wilk Test para hombres: estadístico =', stat_hombres, ', p-valor =', p_value_hombres)
+
+# Test de Shapiro-Wilk para mujeres
+stat_mujeres, p_value_mujeres = stats.shapiro(promedioFemenino)
+print('Shapiro-Wilk Test para mujeres: estadístico =', stat_mujeres, ', p-valor =', p_value_mujeres)
+
+# Comparo varianzas
+# Prueba de Levene
+stat_levene, p_value_levene = stats.levene(promedioMasculino, promedioFemenino)
+print(f'Prueba de Levene: estadístico = {stat_levene}, p-valor = {p_value_levene}')
+
+
 #%% PRUEBA DE SIGNIFICANCIA
-t_stat, p_value = stats.ttest_ind(promedioMasculino[0:4000], promedioFemenino[0:4000])
+t_stat, p_value = stats.ttest_ind(promedioMasculino[0:4000], promedioFemenino[0:4000],equal_var = False)
 
 # Imprime los resultados
 print(f"Estadístico t: {t_stat} en primer segmento")
@@ -752,7 +775,7 @@ else:
     print("PRIMER SEGMENTO: No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
     
     
-t_stat, p_value = stats.ttest_ind(promedioMasculino[4001:12250], promedioFemenino[4001:12250])
+t_stat, p_value = stats.ttest_ind(promedioMasculino[4001:12250], promedioFemenino[4001:12250],equal_var = False)
 # Imprime los resultados
 print(f"Estadístico t: {t_stat} en segundo segmento")
 print(f"Valor p: {p_value} en segundo segmento")
@@ -763,7 +786,7 @@ if p_value < alpha:
     print("SEGUNDO SEGMENTO: Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
 else:
     print("SEGUNDO SEGMENTO: No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
-t_stat, p_value = stats.ttest_ind(promedioMasculino[12251:13141], promedioFemenino[12251:13141])
+t_stat, p_value = stats.ttest_ind(promedioMasculino[12251:13141], promedioFemenino[12251:13141],equal_var = False)
 # Imprime los resultados
 print(f"Estadístico t: {t_stat} en tercer segmento")
 print(f"Valor p: {p_value} en tercer segmento")
@@ -786,9 +809,9 @@ levene_stat13, levene_p13 = stats.levene(segmento1, segmento3)
 levene_stat23, levene_p23 = stats.levene(segmento2, segmento3)
 
 # Determinar si usar equal_var=True o False en función del resultado de Levene
-equal_var_12 = levene_p12 > 0.05
-equal_var_13 = levene_p13 > 0.05
-equal_var_23 = levene_p23 > 0.05
+equal_var_12 = False
+equal_var_13 = False
+equal_var_23 = False
 
 # Realizar pruebas t de Student
 t_stat12, p_value12 = stats.ttest_ind(segmento1, segmento2, equal_var=equal_var_12)
@@ -797,9 +820,183 @@ t_stat23, p_value23 = stats.ttest_ind(segmento2, segmento3, equal_var=equal_var_
 
 # Crear la tabla de resultados
 comparison_table_corrected = {
-    "Segmento 1": ["1", f"p-value: {p_value12:.6f}", f"p-value: {p_value13:.6f}"],
-    "Segmento 2": [f"p-value: {p_value12:.6f}", "1", f"p-value: {p_value23:.6f}"],
-    "Segmento 3": [f"p-value: {p_value13:.6f}", f"p-value: {p_value23:.6f}", "1"]
+    "Segmento 1": ["1", f"{p_value12:.6f}", f": {p_value13:.6f}"],
+    "Segmento 2": [f": {p_value12:.6f}", "1", f": {p_value23:.6f}"],
+    "Segmento 3": [f" {p_value13:.6f}", f"{p_value23:.6f}", "1"]
 }
 comparison_table_corrected
+
+comparison_table_corrected
+
+#%% Comparo entre hombres y mujeres antes el mismo estimulo:
+
+equal_var = False    
+
+# 95-180		Inicio del relato y ambientacion de la persona
+Masculino = promedioMasculino[950:1800]
+Femenino = promedioFemenino[950:1800]
+
+tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
+   
+print(f"Valor p: {p_value} en la respuesta del estimulo entre 95-180")
+
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.001
+if p_value < alpha:
+    print("Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+else:
+    print("No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+   
+    
+   
+#%%
+#481-530		Estrella "ilumina todo el craneo" y luego comienza a descender hacia la garganta
+Masculino = promedioMasculino[4810:5300]
+Femenino = promedioFemenino[4810:5300]
+
+tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
+   
+print(f"Valor p: {p_value} en la respuesta del estimulo entre 481-530")
+
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.001
+if p_value < alpha:
+    print("Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+else:
+    print("No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+     
+#585-653		Estrella se expande y ocupa todo el torax, expandiendose hacia el abdomen
+Masculino = promedioMasculino[5850:6530]
+Femenino = promedioFemenino[5850:6530]
+
+tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
+   
+print(f"Valor p: {p_value} en la respuesta del estimulo entre 585-653")
+
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.001
+if p_value < alpha:
+    print("Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+else:
+    print("No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+
+# 761-828		La Luz busca atraviesa la piel, el cuerpo se sumerje en una atmosfera luminosa que se expande
+Masculino = promedioMasculino[7610:8280]
+Femenino = promedioFemenino[7610:8280]
+
+tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
+   
+print(f"Valor p: {p_value} en la respuesta del estimulo entre 761-828")
+
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.001
+if p_value < alpha:
+    print("Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+else:
+    print("No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+
+#925-960		Cuerpo entero "brillando" y la luz ejerce presion en la piel, entrando al cuerpo
+Masculino = promedioMasculino[9250:9600]
+Femenino = promedioFemenino[9250:9600]
+
+tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
+   
+print(f"Valor p: {p_value} en la respuesta del estimulo entre 925-960")
+
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.001
+if p_value < alpha:
+    print("Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+else:
+    print("No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+
+
+#961-1033	La luz vuelve desde las extremidades, subiendo por el cuerpo. La persona "siente enorme bienestar"
+Masculino = promedioMasculino[9610:10330]
+Femenino = promedioFemenino[9610:10330]
+
+tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
+   
+print(f"Valor p: {p_value} en la respuesta del estimulo entre 961-1033")
+
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.001
+if p_value < alpha:
+    print("Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+else:
+    print("No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+
+#1081-1122	Estrella comienza a subir hacia la cabeza, pasando por la garganta. Se asienta en el centro de la cabeza
+Masculino = promedioMasculino[10810:11220]
+Femenino = promedioFemenino[10810:11220]
+
+tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
+   
+print(f"Valor p: {p_value} en la respuesta del estimulo entre 1081-1122")
+
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.001
+if p_value < alpha:
+    print("Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+else:
+    print("No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+
+#%% Busco relacion entre 1100s y 510s
+segmento1 = promedio[4810:5300]
+segmento2 = promedio[10810:11220]
+
+equal_var_12 = False 
+
+# Realizar pruebas t de Student
+t_stat12, p_value12 = stats.ttest_ind(segmento1, segmento2, equal_var=equal_var_12)
+
+print(f"Valor p: {p_value12} en la respuesta del estimulo de 1100s y 510s")
+
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.001
+if p_value12 < alpha:
+    print("Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+else:
+    print("No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+
+
+#%% Funcion matematica:
+plt.figure()
+limInf = 10950 #10810
+limSup = 11180 #11220
+
+
+# Datos de ejemplo (puedes reemplazar estos con tus propios datos)
+x = t[limInf:11030]#:limSup]
+y = promedioFemenino[limInf:11030]#limSup]
+
+plt.plot(x,y)
+plt.grid()
+
+#%%
+
+# # Definición de la función exponencial
+# def exponential_func(x, a, b):
+#     return a * np.exp(b * x)
+
+# # Ajuste de la función exponencial a los datos
+# popt, pcov = curve_fit(exponential_func, x, y)
+
+# # Parámetros ajustados
+# a_fit, b_fit = popt
+
+# # Valores ajustados
+# y_fit = exponential_func(x, a_fit, b_fit)
+
+# # Gráfico
+# plt.scatter(x, y, label='Datos Originales')
+# plt.plot(x, y_fit, label='Exponencial Ajustada', color='red')
+# plt.legend()
+# plt.show()
+
+
+
+#%% Guardar promedios
+# np.savetxt('promediofemenino.txt', promedioFemenino)
+# np.savetxt('promediomasculino.txt', promedioMasculino)
 
