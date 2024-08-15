@@ -440,16 +440,33 @@ plt.title('Lineas hombres')
 plt.show()
 
 #%%
-def detectar_picos_y_modificar_senal(signal, umbral , retardo = 100):
+
+def detectar_picos_y_modificar_senal(signal, umbral, retardo=100):
     señal_modificada = np.zeros_like(signal)
-    ventana = 90
     ultima_muestra = -retardo  # Inicializar con un valor negativo para evitar problemas en la primera iteración
-    for i in range(ventana, len(signal) - ventana):
+    n = len(signal)
+    
+    for i in range(1, n - 1):
         if signal[i] > umbral and signal[i] > signal[i-1] and signal[i] > signal[i+1] and (i - ultima_muestra) > retardo:
-            señal_modificada[i-ventana:i+ventana+1] = signal[i-ventana:i+ventana+1]
-            ultima_muestra = i+ventana+1
+            # Encontrar el cruce por cero previo
+            inicio = i
+            while inicio > 0 and signal[inicio] * signal[inicio - 1] > 0:
+                inicio -= 1
+            
+            # Encontrar el cruce por cero posterior
+            fin = i
+            while fin < n - 1 and signal[fin] * signal[fin + 1] > 0:
+                fin += 1
+            
+            # Copiar los valores desde el cruce por cero previo hasta el cruce por cero posterior
+            señal_modificada[inicio:fin+1] = signal[inicio:fin+1]
+            ultima_muestra = i
+    
     return señal_modificada
+
+# Parámetros
 umbral = 0.01
+
 # Modificar la señal
 señal_modificada = detectar_picos_y_modificar_senal(detrended_signal_M, umbral)
 
@@ -462,6 +479,9 @@ ax3.legend()
 ax4.plot(t_tend, señal_modificada, label='Señal modificada', linestyle='-')
 ax4.legend()
 
+
+plt.figure(figsize=(10, 6))
+plt.plot(t_tend,señal_modificada)
 
 #%% Guardar promedios
 # np.savetxt('promediofemenino.txt', y)
