@@ -8,6 +8,36 @@ import scipy.stats as stats
 from scipy.interpolate import CubicSpline
 from scipy.optimize import curve_fit
 
+def prueba_permutacion_directa(gsr_hombres, gsr_mujeres, num_permutaciones=10000):
+    """
+    Realiza una prueba de permutación para comparar los datos de GSR entre hombres y mujeres.
+    
+    Parámetros:
+    gsr_hombres (array): Datos de GSR para hombres.
+    gsr_mujeres (array): Datos de GSR para mujeres.
+    num_permutaciones (int): Número de permutaciones a realizar (por defecto 10000).
+    
+    Retorna:
+    p_valor (float): El p-valor de la prueba de permutación.
+    """
+    # Calcular el estadístico observado
+    estadistico_observado = np.mean(gsr_hombres) - np.mean(gsr_mujeres)
+    
+    # Realizar permutaciones
+    estadisticos_permutados = []
+    for _ in range(num_permutaciones):
+        datos_combinados = np.concatenate([gsr_hombres, gsr_mujeres])
+        np.random.shuffle(datos_combinados)
+        permutacion_hombres = datos_combinados[:len(gsr_hombres)]
+        permutacion_mujeres = datos_combinados[len(gsr_hombres):]
+        estadistico_permutado = np.mean(permutacion_hombres) - np.mean(permutacion_mujeres)
+        estadisticos_permutados.append(estadistico_permutado)
+    
+    # Calcular el p-valor
+    p_valor = np.sum(np.abs(estadisticos_permutados) >= np.abs(estadistico_observado)) / num_permutaciones
+    
+    return p_valor
+
 def fft_mag(x, fs = 10):
     """
     ------------------------
@@ -761,11 +791,8 @@ print(f'Prueba de Levene: estadístico = {stat_levene}, p-valor = {p_value_leven
 
 
 #%% PRUEBA DE SIGNIFICANCIA
-t_stat, p_value = stats.ttest_ind(promedioMasculino[0:4000], promedioFemenino[0:4000],equal_var = False)
+p_value = prueba_permutacion_directa(promedioMasculino[0:4000], promedioFemenino[0:4000])
 
-# Imprime los resultados
-print(f"Estadístico t: {t_stat} en primer segmento")
-print(f"Valor p: {p_value} en primer segmento")
 
 # Decide si rechazar o no la hipótesis nula
 alpha = 0.05
@@ -775,10 +802,7 @@ else:
     print("PRIMER SEGMENTO: No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
     
     
-t_stat, p_value = stats.ttest_ind(promedioMasculino[4001:12250], promedioFemenino[4001:12250],equal_var = False)
-# Imprime los resultados
-print(f"Estadístico t: {t_stat} en segundo segmento")
-print(f"Valor p: {p_value} en segundo segmento")
+p_value = prueba_permutacion_directa(promedioMasculino[4001:12250], promedioFemenino[4001:12250])
 
     # Decide si rechazar o no la hipótesis nula
 alpha = 0.05
@@ -786,10 +810,8 @@ if p_value < alpha:
     print("SEGUNDO SEGMENTO: Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
 else:
     print("SEGUNDO SEGMENTO: No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.")
-t_stat, p_value = stats.ttest_ind(promedioMasculino[12251:13141], promedioFemenino[12251:13141],equal_var = False)
-# Imprime los resultados
-print(f"Estadístico t: {t_stat} en tercer segmento")
-print(f"Valor p: {p_value} en tercer segmento")
+
+p_value = prueba_permutacion_directa(promedioMasculino[12251:13141], promedioFemenino[12251:13141])
 
     # Decide si rechazar o no la hipótesis nula
 alpha = 0.05
@@ -803,20 +825,11 @@ else:
 segmento1 = promedio[0:4000]
 segmento2 = promedio[4001:12250]
 segmento3 = promedio[12251:13141]
-# Prueba de Levene para igualdad de varianzas
-levene_stat12, levene_p12 = stats.levene(segmento1, segmento2)
-levene_stat13, levene_p13 = stats.levene(segmento1, segmento3)
-levene_stat23, levene_p23 = stats.levene(segmento2, segmento3)
-
-# Determinar si usar equal_var=True o False en función del resultado de Levene
-equal_var_12 = False
-equal_var_13 = False
-equal_var_23 = False
 
 # Realizar pruebas t de Student
-t_stat12, p_value12 = stats.ttest_ind(segmento1, segmento2, equal_var=equal_var_12)
-t_stat13, p_value13 = stats.ttest_ind(segmento1, segmento3, equal_var=equal_var_13)
-t_stat23, p_value23 = stats.ttest_ind(segmento2, segmento3, equal_var=equal_var_23)
+p_value12 = prueba_permutacion_directa(segmento1, segmento2)
+p_value13 = prueba_permutacion_directa(segmento1, segmento3)
+p_value23 = prueba_permutacion_directa(segmento2, segmento3)
 
 # Crear la tabla de resultados
 comparison_table_corrected = {
@@ -830,15 +843,11 @@ comparison_table_corrected
 
 #%% Comparo entre hombres y mujeres antes el mismo estimulo:
 
-equal_var = False    
-
 # 95-180		Inicio del relato y ambientacion de la persona
 Masculino = promedioMasculino[950:1800]
 Femenino = promedioFemenino[950:1800]
 
-tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
-   
-print(f"Valor p: {p_value} en la respuesta del estimulo entre 95-180")
+p_value = prueba_permutacion_directa(Masculino, Femenino)
 
     # Decide si rechazar o no la hipótesis nula
 alpha = 0.001
@@ -854,9 +863,7 @@ else:
 Masculino = promedioMasculino[4810:5300]
 Femenino = promedioFemenino[4810:5300]
 
-tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
-   
-print(f"Valor p: {p_value} en la respuesta del estimulo entre 481-530")
+p_value = prueba_permutacion_directa(Masculino, Femenino)
 
     # Decide si rechazar o no la hipótesis nula
 alpha = 0.001
@@ -869,10 +876,7 @@ else:
 Masculino = promedioMasculino[5850:6530]
 Femenino = promedioFemenino[5850:6530]
 
-tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
-   
-print(f"Valor p: {p_value} en la respuesta del estimulo entre 585-653")
-
+p_value = prueba_permutacion_directa(Masculino, Femenino)
     # Decide si rechazar o no la hipótesis nula
 alpha = 0.001
 if p_value < alpha:
@@ -884,10 +888,7 @@ else:
 Masculino = promedioMasculino[7610:8280]
 Femenino = promedioFemenino[7610:8280]
 
-tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
-   
-print(f"Valor p: {p_value} en la respuesta del estimulo entre 761-828")
-
+p_value = prueba_permutacion_directa(Masculino, Femenino)
     # Decide si rechazar o no la hipótesis nula
 alpha = 0.001
 if p_value < alpha:
@@ -899,10 +900,7 @@ else:
 Masculino = promedioMasculino[9250:9600]
 Femenino = promedioFemenino[9250:9600]
 
-tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
-   
-print(f"Valor p: {p_value} en la respuesta del estimulo entre 925-960")
-
+p_value = prueba_permutacion_directa(Masculino, Femenino)
     # Decide si rechazar o no la hipótesis nula
 alpha = 0.001
 if p_value < alpha:
@@ -914,10 +912,7 @@ else:
 #961-1033	La luz vuelve desde las extremidades, subiendo por el cuerpo. La persona "siente enorme bienestar"
 Masculino = promedioMasculino[9610:10330]
 Femenino = promedioFemenino[9610:10330]
-
-tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
-   
-print(f"Valor p: {p_value} en la respuesta del estimulo entre 961-1033")
+p_value = prueba_permutacion_directa(Masculino, Femenino)
 
     # Decide si rechazar o no la hipótesis nula
 alpha = 0.001
@@ -929,11 +924,7 @@ else:
 #1081-1122	Estrella comienza a subir hacia la cabeza, pasando por la garganta. Se asienta en el centro de la cabeza
 Masculino = promedioMasculino[10810:11220]
 Femenino = promedioFemenino[10810:11220]
-
-tstats, p_value = stats.ttest_ind(Masculino, Femenino, equal_var=equal_var)
-   
-print(f"Valor p: {p_value} en la respuesta del estimulo entre 1081-1122")
-
+p_value = prueba_permutacion_directa(Masculino, Femenino)
     # Decide si rechazar o no la hipótesis nula
 alpha = 0.001
 if p_value < alpha:
@@ -945,10 +936,8 @@ else:
 segmento1 = promedio[4810:5300]
 segmento2 = promedio[10810:11220]
 
-equal_var_12 = False 
-
 # Realizar pruebas t de Student
-t_stat12, p_value12 = stats.ttest_ind(segmento1, segmento2, equal_var=equal_var_12)
+p_value12 = prueba_permutacion_directa(segmento1, segmento2)
 
 print(f"Valor p: {p_value12} en la respuesta del estimulo de 1100s y 510s")
 
@@ -966,12 +955,28 @@ limInf = 10950 #10810
 limSup = 11180 #11220
 
 
-# Datos de ejemplo (puedes reemplazar estos con tus propios datos)
-x = t[limInf:11030]#:limSup]
-y = promedioFemenino[limInf:11030]#limSup]
 
-plt.plot(x,y)
+# Datos de ejemplo (puedes reemplazar estos con tus propios datos)
+# x = t[limInf:11030]#:limSup]
+# y = promedioFemenino[limInf:11030]#limSup]
+
+x = t[limInf:limSup]
+y = promedioFemenino[limInf:limSup]
+z = promedioMasculino[limInf:limSup]
+
+plt.plot(x,y, label = 'Mujeres')
+plt.plot(x,z, label = 'Hombres')
+plt.legend()
 plt.grid()
+
+p_value = prueba_permutacion_directa(y, z)
+    # Decide si rechazar o no la hipótesis nula
+alpha = 0.001
+if p_value < alpha:
+    print("Rechazamos la hipótesis nula: Hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+else:
+    print("No rechazamos la hipótesis nula: No hay una diferencia significativa en la respuesta GSR entre hombres y mujeres.\n")
+
 
 #%%
 
@@ -994,9 +999,39 @@ plt.grid()
 # plt.legend()
 # plt.show()
 
+#%%
+signal = promedioFemenino[4001:12250]
+t_tend = t[4001:12250]
+
+
+# Calcular la línea de tendencia
+slope, intercept, r_value, p_value, std_err = stats.linregress(t_tend,signal)
+
+# Ajustar un polinomio de tercer grado (cúbico)
+coeffs = np.polyfit(t_tend, signal, 15)
+trend = np.polyval(coeffs, t_tend)
+
+# Restar la línea de tendencia
+detrended_signal = signal- trend
+
+# Graficar los resultados
+plt.figure(figsize=(10, 6))
+plt.plot(t_tend, signal, label='Señal Original')
+plt.plot(t_tend, trend, label='Línea de Tendencia', linestyle='--')
+plt.plot(955, promedioFemenino[9580], 'bo', markersize=4)
+plt.plot(790, promedioFemenino[7900], 'bo', markersize=4)
+plt.plot(1105, promedioFemenino[11050], 'bo', markersize=4)
+plt.plot(1015, promedioFemenino[10150], 'bo', markersize=4)
+plt.plot(510, promedioFemenino[5100], 'bo', markersize=4)
+
+plt.plot(t_tend, detrended_signal, label='Señal Sin Tendencia')
+plt.legend()
+plt.xlabel('Tiempo')
+plt.ylabel('Amplitud')
+plt.title('Restar Línea de Tendencia de una Señal')
+plt.show()
 
 
 #%% Guardar promedios
-# np.savetxt('promediofemenino.txt', promedioFemenino)
-# np.savetxt('promediomasculino.txt', promedioMasculino)
-
+np.savetxt('promediofemenino.txt', y)
+np.savetxt('promediomasculino.txt', z)
