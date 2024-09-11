@@ -217,7 +217,7 @@ if __name__ == "__main__":
     folder = "Registros"  # Carpeta que contiene los archivos
   
     all_filtered_signals = []  # Para almacenar todas las señales filtradas
-    seniales_sin_norm = []
+    seniales_sin_filt = []
     fs = 10  # Frecuencia de muestreo
 
     for filename in os.listdir(folder):
@@ -238,9 +238,47 @@ if __name__ == "__main__":
             
             # Almacenar la señal filtrada
             all_filtered_signals.append((filename, Senial))
+            
+            #Almaceno las señales sin filtrar
+            Senial = normalizador(samples)
+            seniales_sin_filt.append((filename,Senial))
               
     #%% Promedio y desvio en hombres y mujeres total
    
+    T = 1/fs
+    N = len(seniales_sin_filt[1][1])
+    t = np.linspace(0, N*T, N, endpoint=False)
+    
+    # Sin filtrar
+    promedioFemenino, promedioMasculino = promedioPorGenero(seniales_sin_filt)
+    desvio_femenino, desvio_masculino = desvioPorGenero(seniales_sin_filt, promedioFemenino, promedioMasculino)
+    
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+    fig.suptitle("Promedio normalizado y desvio estandar en todas las mediciones", fontsize = 18)
+    ax1.set_title("Promedio  masculino", fontsize = 15)
+    ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
+    ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
+    ax1.plot(t,promedioMasculino - desvio_masculino, '--g')
+    ax1.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax1.set_ylabel('Amplitud', fontsize = 12)
+    ax1.set_xlim([0,len(t)/10])
+    ax1.legend()
+    ax1.grid(True)
+
+    ax2.set_title("Promedio  femenino", fontsize = 15)
+    ax2.plot(t,promedioFemenino,'r', label = 'Promedio')
+    ax2.plot(t,(promedioFemenino + desvio_femenino), '--g', label = 'Desvio')
+    ax2.plot(t,(promedioFemenino - desvio_femenino), '--g')
+    ax2.set_xlabel('Tiempo [s]', fontsize = 12)
+    ax2.set_ylabel('Amplitud', fontsize = 12)
+    ax2.set_xlim([0,len(t)/10])
+    ax2.legend()
+    ax2.grid(True)
+    
+    
+    #%% Filtradas
+    
     T = 1/fs
     N = len(all_filtered_signals[1][1])
     t = np.linspace(0, N*T, N, endpoint=False)
@@ -250,7 +288,7 @@ if __name__ == "__main__":
     
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
-    fig.suptitle("Promedio y desvio estandar en todas las mediciones", fontsize = 18)
+    fig.suptitle("Promedio normalizado y desvio estandar en todas las mediciones", fontsize = 18)
     ax1.set_title("Promedio  masculino", fontsize = 15)
     ax1.plot(t,promedioMasculino,'b', label = 'Promedio')
     ax1.plot(t,promedioMasculino + desvio_masculino, '--g', label = 'Desvio')
@@ -283,7 +321,7 @@ if __name__ == "__main__":
     ax1.set_xlabel('Tiempo [s]', fontsize = 12)
     ax1.set_ylabel('Amplitud', fontsize = 12)
     ax1.set_xlim([0,400])
-    ax1.plot(115, promedioMasculino[1140], 'ro', markersize=4, label='Picos')
+    # ax1.plot(115, promedioMasculino[1140], 'ro', markersize=4, label='Picos')
     ax1.legend()
     ax1.grid(True)
 
@@ -294,7 +332,7 @@ if __name__ == "__main__":
     ax2.set_xlabel('Tiempo [s]', fontsize = 12)
     ax2.set_ylabel('Amplitud [S]', fontsize = 12)
     ax2.set_xlim([0,400])
-    ax2.plot(115, promedioFemenino[1140], 'bo', markersize=4, label='Picos')
+    # ax2.plot(115, promedioFemenino[1140], 'bo', markersize=4, label='Picos')
     ax2.legend()
     ax2.grid(True)
    
@@ -417,7 +455,7 @@ plt.show()
 
 #%%
 signalM = promedioMasculino[4001:12250]
-trendM = savgol_filter(signalM, window_length=1500, polyorder=5)
+trendM = savgol_filter(signalM, window_length=1000, polyorder=5)
 slope, intercept, r_value, p_value, std_err = stats.linregress(t_tend,signalM)
 detrended_signal_M = signalM- trendM
 
@@ -432,6 +470,29 @@ plt.axvline(1095, color='red', linewidth=1, linestyle='dashed')
 
 
 plt.plot(t_tend, detrended_signal_M, label='Señal Sin Tendencia')
+plt.legend()
+plt.xlabel('Tiempo')
+
+plt.ylabel('Amplitud')
+plt.title('Lineas hombres')
+plt.show()
+#%%
+signalF = promedioFemenino[4001:12250]
+trendF = savgol_filter(signalF, window_length=1000, polyorder=5)
+slope, intercept, r_value, p_value, std_err = stats.linregress(t_tend,signalF)
+detrended_signal_F = signalF- trendF
+
+plt.figure(figsize=(10, 6))
+plt.plot(t_tend, signalF, label='Señal Original')
+plt.plot(t_tend, trendF, label='Línea de Tendencia', linestyle='--')
+
+plt.axvline(522, color='red', linewidth=1, linestyle='dashed')
+plt.axvline(632, color='red', linewidth=1, linestyle='dashed')
+plt.axvline(795, color='red', linewidth=1, linestyle='dashed')
+plt.axvline(1095, color='red', linewidth=1, linestyle='dashed')
+
+
+plt.plot(t_tend, detrended_signal_F, label='Señal Sin Tendencia')
 plt.legend()
 plt.xlabel('Tiempo')
 
@@ -465,10 +526,10 @@ def detectar_picos_y_modificar_senal(signal, umbral, retardo=100):
     return señal_modificada
 
 # Parámetros
-umbral = 0.01
+umbral = 0.006
 
 # Modificar la señal
-señal_modificada = detectar_picos_y_modificar_senal(detrended_signal_M, umbral)
+señal_modificada_M = detectar_picos_y_modificar_senal(detrended_signal_M, umbral)
 
 # Graficar la señal original y la señal modificada
 fig, (ax3, ax4) = plt.subplots(1, 2, figsize=(16, 8))
@@ -476,13 +537,177 @@ ax3.plot(t_tend,detrended_signal_M, label='Señal original')
 ax3.axhline(y=umbral, color='g', linestyle='--', label='Umbral')
 ax3.legend()
 
-ax4.plot(t_tend, señal_modificada, label='Señal modificada', linestyle='-')
+ax4.plot(t_tend, señal_modificada_M, label='Señal modificada', linestyle='-')
 ax4.legend()
 
 
-plt.figure(figsize=(10, 6))
-plt.plot(t_tend,señal_modificada)
 
+
+plt.figure(figsize=(10, 6))
+plt.plot(t_tend,señal_modificada_M)
+#%%
+señal_modificada_F = detectar_picos_y_modificar_senal(detrended_signal_F, umbral)
 #%% Guardar promedios
 # np.savetxt('promediofemenino.txt', y)
 # np.savetxt('promediomasculino.txt', z)
+# plt.figure(figsize=(10, 6))
+fig, (ax3, ax4) = plt.subplots(1, 2, figsize=(16, 8))
+ax3.set_title("Promedio  masculino normalizado y picos detectados", fontsize = 15)
+ax3.plot(t_tend, signalM,'b', label='Señal Original')
+# plt.plot(t_tend, trendM, label='Línea de Tendencia', linestyle='--')
+ax3.plot(t_tend, señal_modificada_M,'#D95319', label='Picos', linestyle='-')
+ax3.set_xlabel('Tiempo [s]')
+ax3.set_ylabel('Amplitud')
+ax3.legend()
+ax3.grid()
+
+# plt.figure(figsize=(10, 6))
+ax4.set_title("Promedio  femenino normalizado y picos detectados", fontsize = 15)
+ax4.plot(t_tend, signalF,'r', label='Señal Original')
+# plt.plot(t_tend, trendF, label='Línea de Tendencia', linestyle='--')
+ax4.plot(t_tend, señal_modificada_F,'m', label='Picos', linestyle='-')
+ax4.set_xlabel('Tiempo [s]')
+ax4.set_ylabel('Amplitud')
+ax4.legend()
+ax4.grid()
+#%%
+def detectar_picos(signal, umbral, retardo=100):
+    señal_modificada = np.zeros_like(signal)
+    indices_picos = []
+    ultima_muestra = -retardo
+    n = len(signal)
+
+    for i in range(1, n - 1):
+        if signal[i] > umbral and signal[i] > signal[i-1] and signal[i] > signal[i+1] and (i - ultima_muestra) > retardo:
+
+            inicio = i
+            while inicio > 0 and signal[inicio] * signal[inicio - 1] > 0:
+                inicio -= 1
+
+
+            fin = i
+            while fin < n - 1 and signal[fin] * signal[fin + 1] > 0:
+                fin += 1
+
+            señal_modificada[inicio:fin+1] = signal[inicio:fin+1]
+            indices_picos.append(i)  # Guardar el índice del pico máximo
+            ultima_muestra = i
+
+    return señal_modificada, indices_picos
+
+señal_modificada, picos_M = detectar_picos(detrended_signal_M, umbral)
+# ax3.plot(t_tend, señal_modificada, label='Señal modificada', linestyle='-')
+print("\n Hombres")
+for pico in picos_M:
+    print(t_tend[pico],señal_modificada[pico])
+    
+señal_modificada, picos_F = detectar_picos(detrended_signal_F, umbral)
+# ax4.plot(t_tend, señal_modificada, label='Señal modificada', linestyle='-')
+print("\n Mujeres:") 
+for pico in picos_F:
+    print(t_tend[pico],señal_modificada[pico])
+#%% Segmento 1
+signalM = promedioMasculino[0:4000]
+t_tend = t[0:4000]
+umbral_1 = 0.01
+trendM = savgol_filter(signalM, window_length=1000, polyorder=5)
+slope, intercept, r_value, p_value, std_err = stats.linregress(t_tend,signalM)
+detrended_signal_M = signalM- trendM
+señal_modificada = detectar_picos_y_modificar_senal(detrended_signal_M, umbral_1)
+
+fig, (ax3, ax4) = plt.subplots(1, 2, figsize=(16, 8))
+# plt.figure(figsize=(10, 6))
+ax3.set_title("Promedio masculino normalizado y picos detectados", fontsize = 15)
+ax3.plot(t_tend, signalM,'b', label='Señal Original')
+# plt.axhline(y=umbral, color='g', linestyle='--', label='Umbral')
+ax3.plot(t_tend, señal_modificada,'#D95319', label=' Picos', linestyle='-')
+ax3.set_xlabel('Tiempo [s]')
+ax3.set_ylabel('Amplitud')
+ax3.legend()
+ax3.grid()
+
+señal_modificada, picos_M = detectar_picos(detrended_signal_M, umbral)
+print("\n Hombres")
+for pico in picos_M:
+    print(t_tend[pico],señal_modificada[pico])
+    
+
+signalF = promedioFemenino[0:4000]
+t_tend = t[0:4000]
+
+trendF = savgol_filter(signalF, window_length=1000, polyorder=5)
+slope, intercept, r_value, p_value, std_err = stats.linregress(t_tend,signalF)
+detrended_signal_F = signalF- trendF
+señal_modificada = detectar_picos_y_modificar_senal(detrended_signal_F, 0.012)
+
+# plt.figure(figsize=(10, 6))
+ax4.set_title("Promedio femenino normalizado y picos detectados", fontsize = 15)
+ax4.plot(t_tend, signalF,'r', label='Señal Original')
+# plt.axhline(y=umbral, color='g', linestyle='--', label='Umbral')
+ax4.plot(t_tend, señal_modificada,'m', label='Picos', linestyle='-')
+ax4.set_xlabel('Tiempo [s]')
+ax4.set_ylabel('Amplitud')
+ax4.legend()
+ax4.grid()
+
+
+# ax3.plot(t_tend, señal_modificada, label='Señal modificada', linestyle='-')
+
+    
+señal_modificada, picos_F = detectar_picos(detrended_signal_F, umbral)
+# ax4.plot(t_tend, señal_modificada, label='Señal modificada', linestyle='-')
+print("\n Mujeres:") 
+for pico in picos_F:
+    print(t_tend[pico],señal_modificada[pico])
+#%% Segmento 3
+fig, (ax3, ax4) = plt.subplots(1, 2, figsize=(16, 8))
+
+signalM = promedioMasculino[12250:13140]
+t_tend = t[12250:13140]
+trendM = savgol_filter(signalM, window_length=100, polyorder=5)
+slope, intercept, r_value, p_value, std_err = stats.linregress(t_tend,signalM)
+detrended_signal_M = signalM- trendM
+señal_modificada = detectar_picos_y_modificar_senal(detrended_signal_M, umbral)
+
+ax3.set_title("Promedio masculino normalizado y picos detectados", fontsize = 15)
+ax3.plot(t_tend, signalM,'b', label='Señal Original')
+# plt.axhline(y=umbral, color='g', linestyle='--', label='Umbral')
+ax3.plot(t_tend, señal_modificada,'#D95319', label=' Picos', linestyle='-')
+ax3.set_xlabel('Tiempo [s]')
+ax3.set_ylabel('Amplitud')
+ax3.legend()
+ax3.grid()
+
+señal_modificada, picos_M = detectar_picos(detrended_signal_M, umbral)
+print("\n Hombres:")
+for pico in picos_M:
+    print(t_tend[pico],señal_modificada[pico])
+
+signalF = promedioFemenino[12250:13140]
+t_tend = t[12250:13140]
+trendF = savgol_filter(signalF, window_length=100, polyorder=5)
+slope, intercept, r_value, p_value, std_err = stats.linregress(t_tend,signalF)
+detrended_signal_F = signalF- trendF
+señal_modificada = detectar_picos_y_modificar_senal(detrended_signal_F, umbral)
+
+# plt.figure(figsize=(10, 6))
+ax4.set_title("Promedio femenino normalizado y picos detectados", fontsize = 15)
+ax4.plot(t_tend, signalF,'r', label='Señal Original')
+# plt.axhline(y=umbral, color='g', linestyle='--', label='Umbral')
+ax4.plot(t_tend, señal_modificada,'m', label='Picos', linestyle='-')
+ax4.set_xlabel('Tiempo [s]')
+ax4.set_ylabel('Amplitud')
+ax4.legend()
+ax4.grid()
+
+
+# ax3.plot(t_tend, señal_modificada, label='Señal modificada', linestyle='-')
+
+
+print("\n Mujeres:")    
+señal_modificada, picos_F = detectar_picos(detrended_signal_F, umbral)
+# ax4.plot(t_tend, señal_modificada, label='Señal modificada', linestyle='-')
+
+for pico in picos_F:
+    print(t_tend[pico],señal_modificada[pico])
+#%%
