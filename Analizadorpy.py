@@ -552,7 +552,11 @@ señal_modificada_F = detectar_picos_y_modificar_senal(detrended_signal_F, umbra
 # np.savetxt('promediomasculino.txt', z)
 # plt.figure(figsize=(10, 6))
 fig, (ax3, ax4) = plt.subplots(1, 2, figsize=(16, 8))
+<<<<<<< HEAD
 ax3.set_title("Promedio  masculino normalizado y picos detectados", fontsize = 15)
+=======
+ax3.set_title("Promedio  masculino y picos detectados", fontsize = 15)
+>>>>>>> 13099ab557aef18e2c43b298583bd13eb7717f93
 ax3.plot(t_tend, signalM,'b', label='Señal Original')
 # plt.plot(t_tend, trendM, label='Línea de Tendencia', linestyle='--')
 ax3.plot(t_tend, señal_modificada_M,'#D95319', label='Picos', linestyle='-')
@@ -562,7 +566,11 @@ ax3.legend()
 ax3.grid()
 
 # plt.figure(figsize=(10, 6))
+<<<<<<< HEAD
 ax4.set_title("Promedio  femenino normalizado y picos detectados", fontsize = 15)
+=======
+ax4.set_title("Promedio  femenino y picos detectados", fontsize = 15)
+>>>>>>> 13099ab557aef18e2c43b298583bd13eb7717f93
 ax4.plot(t_tend, signalF,'r', label='Señal Original')
 # plt.plot(t_tend, trendF, label='Línea de Tendencia', linestyle='--')
 ax4.plot(t_tend, señal_modificada_F,'m', label='Picos', linestyle='-')
@@ -617,7 +625,11 @@ señal_modificada = detectar_picos_y_modificar_senal(detrended_signal_M, umbral_
 
 fig, (ax3, ax4) = plt.subplots(1, 2, figsize=(16, 8))
 # plt.figure(figsize=(10, 6))
+<<<<<<< HEAD
 ax3.set_title("Promedio masculino normalizado y picos detectados", fontsize = 15)
+=======
+ax3.set_title("Promedio  masculino y picos detectados", fontsize = 15)
+>>>>>>> 13099ab557aef18e2c43b298583bd13eb7717f93
 ax3.plot(t_tend, signalM,'b', label='Señal Original')
 # plt.axhline(y=umbral, color='g', linestyle='--', label='Umbral')
 ax3.plot(t_tend, señal_modificada,'#D95319', label=' Picos', linestyle='-')
@@ -641,7 +653,11 @@ detrended_signal_F = signalF- trendF
 señal_modificada = detectar_picos_y_modificar_senal(detrended_signal_F, 0.012)
 
 # plt.figure(figsize=(10, 6))
+<<<<<<< HEAD
 ax4.set_title("Promedio femenino normalizado y picos detectados", fontsize = 15)
+=======
+ax4.set_title("Promedio  femenino y picos detectados", fontsize = 15)
+>>>>>>> 13099ab557aef18e2c43b298583bd13eb7717f93
 ax4.plot(t_tend, signalF,'r', label='Señal Original')
 # plt.axhline(y=umbral, color='g', linestyle='--', label='Umbral')
 ax4.plot(t_tend, señal_modificada,'m', label='Picos', linestyle='-')
@@ -669,7 +685,11 @@ slope, intercept, r_value, p_value, std_err = stats.linregress(t_tend,signalM)
 detrended_signal_M = signalM- trendM
 señal_modificada = detectar_picos_y_modificar_senal(detrended_signal_M, umbral)
 
+<<<<<<< HEAD
 ax3.set_title("Promedio masculino normalizado y picos detectados", fontsize = 15)
+=======
+ax3.set_title("Promedio  masculino y picos detectados", fontsize = 15)
+>>>>>>> 13099ab557aef18e2c43b298583bd13eb7717f93
 ax3.plot(t_tend, signalM,'b', label='Señal Original')
 # plt.axhline(y=umbral, color='g', linestyle='--', label='Umbral')
 ax3.plot(t_tend, señal_modificada,'#D95319', label=' Picos', linestyle='-')
@@ -691,7 +711,11 @@ detrended_signal_F = signalF- trendF
 señal_modificada = detectar_picos_y_modificar_senal(detrended_signal_F, umbral)
 
 # plt.figure(figsize=(10, 6))
+<<<<<<< HEAD
 ax4.set_title("Promedio femenino normalizado y picos detectados", fontsize = 15)
+=======
+ax4.set_title("Promedio  femenino y picos detectados", fontsize = 15)
+>>>>>>> 13099ab557aef18e2c43b298583bd13eb7717f93
 ax4.plot(t_tend, signalF,'r', label='Señal Original')
 # plt.axhline(y=umbral, color='g', linestyle='--', label='Umbral')
 ax4.plot(t_tend, señal_modificada,'m', label='Picos', linestyle='-')
@@ -710,4 +734,8 @@ señal_modificada, picos_F = detectar_picos(detrended_signal_F, umbral)
 
 for pico in picos_F:
     print(t_tend[pico],señal_modificada[pico])
+<<<<<<< HEAD
 #%%
+=======
+#%%
+>>>>>>> 13099ab557aef18e2c43b298583bd13eb7717f93
